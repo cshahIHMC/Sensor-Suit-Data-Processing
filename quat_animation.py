@@ -474,7 +474,7 @@ limb_keys = {
     # "shank_l": "imu3_quat",
     # "shank_r": "imu4_quat",
     
-    # 04_21_2025_ Collection - Imu position on heel
+    # 04_21_2025_ Collection - Imu position on heel - Just walking
     
     "pelvis": "imu2_quat",
     "thigh_l": "imu1_quat",
@@ -482,6 +482,16 @@ limb_keys = {
     "thigh_r": "imu6_quat", 
     "shank_l": "imu4_quat",
     "shank_r": "imu5_quat",
+    
+    # 04_28_2025_ Collection - Imu position on heel - 2 walking set collection
+    
+    # "pelvis": "imu2_quat",
+    # "thigh_l": "imu1_quat",
+    # "back": "imu3_quat",
+    # "thigh_r": "imu6_quat", 
+    # "shank_l": "imu5_quat",
+    # "shank_r": "imu4_quat",
+    
 
 
 

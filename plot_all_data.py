@@ -71,7 +71,7 @@ def plot_all_gyro_data(df, file_name, col_names, data_keys):
     
 
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_21_2025/04_21_2025_leg_swing.csv"
-csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_21_2025/04_21_2025_10_min_walk_test.csv"
+csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_28_2025/04_28_2025_tap_test.csv"
 
 
 df = pd.read_csv(csv_path)
