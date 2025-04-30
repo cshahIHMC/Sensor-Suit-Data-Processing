@@ -75,7 +75,7 @@ def transform_quaternions(data, t_pose_q, transforms):
     for imu in data.keys():
 
         # Normalize all imu's
-        quat_magnitude = np.linalg.norm(data[imu])
+        quat_magnitude = np.linalg.norm(data[imu], axis=1, keepdims=True)
         quaternions[imu] = R.from_quat(data[imu]/quat_magnitude, scalar_first=True)
         
         
@@ -467,21 +467,21 @@ limb_keys = {
         
     # 123 - Ankle Validation
     
-    # "pelvis": "imu2_quat",
-    # "thigh_l": "imu5_quat",
-    # "back": "imu6_quat",
-    # "thigh_r": "imu1_quat", 
-    # "shank_l": "imu3_quat",
-    # "shank_r": "imu4_quat",
+    "pelvis": "imu2_quat",
+    "thigh_l": "imu5_quat",
+    "back": "imu6_quat",
+    "thigh_r": "imu1_quat", 
+    "shank_l": "imu3_quat",
+    "shank_r": "imu4_quat",
     
     # 04_21_2025_ Collection - Imu position on heel - Just walking
     
-    "pelvis": "imu2_quat",
-    "thigh_l": "imu1_quat",
-    "back": "imu3_quat",
-    "thigh_r": "imu6_quat", 
-    "shank_l": "imu4_quat",
-    "shank_r": "imu5_quat",
+    # "pelvis": "imu2_quat",
+    # "thigh_l": "imu1_quat",
+    # "back": "imu3_quat",
+    # "thigh_r": "imu6_quat", 
+    # "shank_l": "imu4_quat",
+    # "shank_r": "imu5_quat",
     
     # 04_28_2025_ Collection - Imu position on heel - 2 walking set collection
     
@@ -523,7 +523,7 @@ segment_lengths = {"back": 0.3, "pelvis_l": 0.2, "pelvis_r":0.2, "thigh_l":0.4, 
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_04_2025/04_04_2025_10_min_trial_2.csv"
 
 # t_pose_csv_path = "/home/cshah/workspaces/sensorsuit/logs/12_tpose.csv"
-# csv_path = "/home/cshah/workspaces/sensorsuit/logs/12_tpose_walk.csv"
+csv_path = "/home/cshah/workspaces/sensorsuit/logs/123_right_foot_inside_out.csv"
 
 # # Full data collection
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_09_2025/04_09_2025_trial_2.csv"
@@ -532,7 +532,7 @@ segment_lengths = {"back": 0.3, "pelvis_l": 0.2, "pelvis_r":0.2, "thigh_l":0.4, 
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/1234_left_foot_up_down.csv"
 
 # 04_21_2025 -Foot and just walking collection
-csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_21_2025/04_21_2025_leg_swing.csv"
+# csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_21_2025/04_21_2025_leg_swing.csv"
 
 
 # Extracting the data from csv
