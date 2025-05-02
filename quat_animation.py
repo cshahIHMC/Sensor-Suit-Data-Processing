@@ -44,8 +44,8 @@ def build_transforms():
     # # Convert rotation matrices to quaternions
     transforms["Animation_2_pelvis"] = R.from_matrix(get_R_x(np.pi) @ get_R_y( np.pi/2)).as_quat()
     transforms["Animation_2_back"] = R.from_matrix(get_R_x(np.pi) @ get_R_y( np.pi/2)).as_quat()
-    transforms["Animation_2_thigh_r"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
-    transforms["Animation_2_thigh_l"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
+    transforms["Animation_2_thigh_r"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x( -np.pi/4)).as_quat()
+    transforms["Animation_2_thigh_l"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x( -np.pi/4)).as_quat()
     transforms["Animation_2_shank_l"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(np.pi/2) ).as_quat()
     transforms["Animation_2_shank_r"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(-np.pi/2) ).as_quat()
     
@@ -117,7 +117,12 @@ def transform_quaternions(data, t_pose_q, transforms):
         # Move all IMU's from the world to the pelvis frame and change the reference frame to the pelvis frame and rotate everything to the animation frame
         if imu != "pelvis" and "foot" not in imu:
             # Below transformations put all of the imu's in the pelvis frame and then in the animation frame
-            relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+            # relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+            # relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+            
+            # R_anim_NED = t_pose_q_norm["pelvis"] * R.from_quat(transforms["Animation_2_pelvis"])
+            # relative_rotations = R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * t_pose_q_norm[imu].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+            relative_rotations = R.from_quat(transforms["Animation_2_" + imu]).inv() * t_pose_q_norm[imu].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_" + imu])
         elif "foot" in imu:
             # relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
 
@@ -467,12 +472,12 @@ limb_keys = {
         
     # 123 - Ankle Validation
     
-    "pelvis": "imu2_quat",
-    "thigh_l": "imu5_quat",
-    "back": "imu6_quat",
-    "thigh_r": "imu1_quat", 
-    "shank_l": "imu3_quat",
-    "shank_r": "imu4_quat",
+    # "pelvis": "imu2_quat",
+    # "thigh_l": "imu5_quat",
+    # "back": "imu6_quat",
+    # "thigh_r": "imu1_quat", 
+    # "shank_l": "imu3_quat",
+    # "shank_r": "imu4_quat",
     
     # 04_21_2025_ Collection - Imu position on heel - Just walking
     
@@ -492,6 +497,13 @@ limb_keys = {
     # "shank_l": "imu5_quat",
     # "shank_r": "imu4_quat",
     
+    # Single joint tests
+            "pelvis": "imu2_quat",
+        "thigh_l": "imu1_quat",
+        "back": "imu3_quat",
+        "thigh_r": "imu6_quat", 
+        "shank_l": "imu5_quat",
+        "shank_r": "imu4_quat",
 
 
 
@@ -523,7 +535,7 @@ segment_lengths = {"back": 0.3, "pelvis_l": 0.2, "pelvis_r":0.2, "thigh_l":0.4, 
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_04_2025/04_04_2025_10_min_trial_2.csv"
 
 # t_pose_csv_path = "/home/cshah/workspaces/sensorsuit/logs/12_tpose.csv"
-csv_path = "/home/cshah/workspaces/sensorsuit/logs/123_right_foot_inside_out.csv"
+csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_01_2025/05_01_2025_thigh_45_side.csv"
 
 # # Full data collection
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_09_2025/04_09_2025_trial_2.csv"

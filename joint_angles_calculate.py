@@ -25,6 +25,7 @@ def set_limb_structure():
     
     # Child-parent joint combo
     joint_heirarchy = {
+        "pelvis" : "pelvis",
         "thigh_r" : "pelvis",
         "thigh_l" : "pelvis",
         "shank_r" : "thigh_r",
@@ -40,10 +41,10 @@ def get_joint_imu_map():
     
     joint_imu_map = {
         "pelvis": "imu2_quat",
-        "thigh_l": "imu5_quat",
-        # "back": "imu6_quat",
-        "thigh_r": "imu1_quat", 
-        "shank_l": "imu3_quat",
+        "thigh_l": "imu1_quat",
+        # "back": "imu3_quat",
+        "thigh_r": "imu6_quat", 
+        "shank_l": "imu5_quat",
         "shank_r": "imu4_quat",
         "foot_r": "R_insole",
         "foot_l": "L_insole"
@@ -51,11 +52,11 @@ def get_joint_imu_map():
     
     joint_imu_map_microstrain = {
         "pelvis": "imu2_quat",
-        "thigh_l": "imu5_quat",
-        # "back": "imu6_quat",
-        "thigh_r": "imu1_quat", 
-        "shank_l": "imu3_quat",
-        "shank_r": "imu4_quat"
+        "thigh_l": "imu1_quat",
+        # "back": "imu3_quat",
+        "thigh_r": "imu6_quat", 
+        "shank_l": "imu5_quat",
+        "shank_r": "imu4_quat",
     }
     
     joint_imu_map_insole = {
@@ -89,6 +90,8 @@ def transform_quaternions(data, t_pose_q, transforms):
         
         
         relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quat_norm["pelvis"].inv() * quat_norm[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+        # relative_rotations =  quat_norm["pelvis"].inv() * quat_norm[imu] 
+
 
         # Stored the transformed_data
         transformed_data[imu] = relative_rotations.as_quat()
@@ -96,7 +99,7 @@ def transform_quaternions(data, t_pose_q, transforms):
     return transformed_data
 
 # Calculate the joint angles using the transformed quaternion data
-def cal_joint_angles(quaternion_data, joint_heirarchy):
+def cal_joint_angles(quaternion_data, joint_heirarchy, transforms):
     joint_quaternions = {}
     joint_angles = {}
     
@@ -107,9 +110,19 @@ def cal_joint_angles(quaternion_data, joint_heirarchy):
         print("Child ", child)
         print("Parent ", parent)
         
-        joint_quaternions[child] = (R.from_quat(quaternion_data[parent]).inv() * R.from_quat(quaternion_data[child])).as_quat()
+        # joint_quaternions[child] = (R.from_quat(quaternion_data[parent]).inv() * R.from_quat(quaternion_data[child])).as_quat()
         
-        joint_angles[child] = R.from_quat(joint_quaternions[child]).as_euler('xyz', degrees=True)
+        # if "thigh" in child:
+        #     joint_quaternions[child] = quaternion_data[child]
+        # else:
+        #     joint_quaternions[child] = (R.from_quat(quaternion_data[parent]).inv() * R.from_quat(quaternion_data[child]) ).as_quat() 
+            
+            
+            
+        
+        joint_quaternions[child]  = quaternion_data[child]
+        
+        joint_angles[child] = R.from_quat(joint_quaternions[child]).as_euler('zyx', degrees=True)
         
          
     return joint_angles
@@ -156,7 +169,7 @@ def plot_joint_angles(joint_angles, GRF):
 def main():
     
     # File Path
-    csv_path = "/home/cshah/workspaces/sensorsuit/logs/123_right_foot_inside_out.csv"
+    csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_01_2025/05_01_2025_sj_thigh_45_front.csv"
     
     # Load the data to a csv
     data = Utility.load_quaternion_data(csv_path=csv_path)
@@ -176,7 +189,7 @@ def main():
     transformed_quat = transform_quaternions(data=quaternion_data, t_pose_q=t_pose_quat, transforms=body_transforms)
     
     # Get the joint angles
-    joint_angles = cal_joint_angles(transformed_quat, joint_heirarchy)
+    joint_angles = cal_joint_angles(transformed_quat, joint_heirarchy, body_transforms)
 
     # Plot the joint angles
     plot_joint_angles(joint_angles, insole_force_data)
