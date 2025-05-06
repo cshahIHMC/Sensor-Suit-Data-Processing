@@ -44,8 +44,8 @@ def build_transforms():
     # # Convert rotation matrices to quaternions
     transforms["Animation_2_pelvis"] = R.from_matrix(get_R_x(np.pi) @ get_R_y( np.pi/2)).as_quat()
     transforms["Animation_2_back"] = R.from_matrix(get_R_x(np.pi) @ get_R_y( np.pi/2)).as_quat()
-    transforms["Animation_2_thigh_r"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x( -np.pi/4)).as_quat()
-    transforms["Animation_2_thigh_l"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x( -np.pi/4)).as_quat()
+    transforms["Animation_2_thigh_r"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
+    transforms["Animation_2_thigh_l"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
     transforms["Animation_2_shank_l"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(np.pi/2) ).as_quat()
     transforms["Animation_2_shank_r"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(-np.pi/2) ).as_quat()
     
@@ -78,8 +78,19 @@ def transform_quaternions(data, t_pose_q, transforms):
         quat_magnitude = np.linalg.norm(data[imu], axis=1, keepdims=True)
         quaternions[imu] = R.from_quat(data[imu]/quat_magnitude, scalar_first=True)
         
+        # if "foot" not in imu:
+        #     relative_rotations = R.from_matrix(np.eye(3)) * t_pose_q_norm[imu].inv() * quaternions[imu]
+        # else :
+        #     relative_rotations =  quaternions[imu] * t_pose_q_norm[imu].inv() * R.from_matrix(np.eye(3)) 
         
         
+        # if "foot" not in imu:
+        #     name = "Animation_2_" + imu
+        #     relative_rotations = R.from_quat(transforms[name]).inv() * t_pose_q_norm[imu].inv() * quaternions[imu] * R.from_quat(transforms[name])
+        # else :
+        #     name = "Animation_2_" + imu
+        #     relative_rotations =  R.from_quat(transforms[name]) * quaternions[imu] * t_pose_q_norm[imu].inv() * R.from_quat(transforms[name]).inv()
+            
         ############################# section for locked pelvis #################################
 
         # Move the x sensor imu's from their own world reference frame to the NED world frame consistent with the microstrain
@@ -121,8 +132,8 @@ def transform_quaternions(data, t_pose_q, transforms):
             # relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
             
             # R_anim_NED = t_pose_q_norm["pelvis"] * R.from_quat(transforms["Animation_2_pelvis"])
-            # relative_rotations = R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * t_pose_q_norm[imu].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
-            relative_rotations = R.from_quat(transforms["Animation_2_" + imu]).inv() * t_pose_q_norm[imu].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_" + imu])
+            relative_rotations = R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+            # relative_rotations = R.from_quat(transforms["Animation_2_" + imu]).inv() * t_pose_q_norm[imu].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_" + imu])
         elif "foot" in imu:
             # relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
 
@@ -224,10 +235,10 @@ def get_joint_positions(transformed_data, limb_structure, segment_lengths):
         for segment, (start, end) in limb_structure.items():
             if "pelvis" in segment:
                 ## If pelvis assuming it to be fixed
-                # rot = R.from_matrix(np.eye(3))
+                rot = R.from_matrix(np.eye(3))
                 
                 ## If pelvis is not fixed
-                rot = R.from_quat(transformed_data[start][i])
+                # rot = R.from_quat(transformed_data[start][i])
             else:
                 # rot_matrix = quaternion_to_matrix(transformed_data[end][i])
                 rot = R.from_quat(transformed_data[end][i])
@@ -356,7 +367,7 @@ def animate_motion_3d(positions, limb_structure, file_name):
     plt.show()
 
 def animate_motion_3d_pyqtgraph(positions, limb_structure):
-    app = QtWidgets.QApplication(sys.argv)
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
     window = gl.GLViewWidget()
     window.setWindowTitle('3D Limb Motion')
     window.setGeometry(0, 0, 800, 600)
@@ -481,12 +492,12 @@ limb_keys = {
     
     # 04_21_2025_ Collection - Imu position on heel - Just walking
     
-    # "pelvis": "imu2_quat",
-    # "thigh_l": "imu1_quat",
-    # "back": "imu3_quat",
-    # "thigh_r": "imu6_quat", 
-    # "shank_l": "imu4_quat",
-    # "shank_r": "imu5_quat",
+    "pelvis": "imu2_quat",
+    "thigh_l": "imu1_quat",
+    "back": "imu3_quat",
+    "thigh_r": "imu6_quat", 
+    "shank_l": "imu4_quat",
+    "shank_r": "imu5_quat",
     
     # 04_28_2025_ Collection - Imu position on heel - 2 walking set collection
     
@@ -498,12 +509,12 @@ limb_keys = {
     # "shank_r": "imu4_quat",
     
     # Single joint tests
-            "pelvis": "imu2_quat",
-        "thigh_l": "imu1_quat",
-        "back": "imu3_quat",
-        "thigh_r": "imu6_quat", 
-        "shank_l": "imu5_quat",
-        "shank_r": "imu4_quat",
+        # "pelvis": "imu2_quat",
+        # "thigh_l": "imu1_quat",
+        # "back": "imu3_quat",
+        # "thigh_r": "imu6_quat", 
+        # "shank_l": "imu5_quat",
+        # "shank_r": "imu4_quat",
 
 
 
@@ -535,7 +546,7 @@ segment_lengths = {"back": 0.3, "pelvis_l": 0.2, "pelvis_r":0.2, "thigh_l":0.4, 
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_04_2025/04_04_2025_10_min_trial_2.csv"
 
 # t_pose_csv_path = "/home/cshah/workspaces/sensorsuit/logs/12_tpose.csv"
-csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_01_2025/05_01_2025_thigh_45_side.csv"
+# csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_01_2025/05_01_2025_feet_on_toes_2.csv"
 
 # # Full data collection
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_09_2025/04_09_2025_trial_2.csv"
@@ -544,7 +555,7 @@ csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_01_2025/05_01_2025_thigh_4
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/1234_left_foot_up_down.csv"
 
 # 04_21_2025 -Foot and just walking collection
-# csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_21_2025/04_21_2025_leg_swing.csv"
+csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_21_2025/04_21_2025_leg_swing.csv"
 
 
 # Extracting the data from csv

@@ -34,6 +34,8 @@ def plot_all_gyro_data(df, file_name, col_names, data_keys):
     fig, axs = plt.subplots(3, 8, figsize=(30,10), sharex=True)
     
     key_list = list(data_keys.keys())
+    
+
             
     for i in range(24):
         row = i % 3
@@ -41,6 +43,7 @@ def plot_all_gyro_data(df, file_name, col_names, data_keys):
         ax = axs[row, col]
             
         ax.plot(df.iloc[:, i], linewidth=2, color="black")  # Plot the i-th column
+        ax.set_ylim(-4,4)
                 
         joint_name = None
         prefix = col_names[i][:4]
@@ -71,7 +74,7 @@ def plot_all_gyro_data(df, file_name, col_names, data_keys):
     
 
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_21_2025/04_21_2025_leg_swing.csv"
-csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_28_2025/04_28_2025_tap_test.csv"
+csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_01_2025/05_01_2025_foot_planted_move_shank.csv"
 
 
 df = pd.read_csv(csv_path)
