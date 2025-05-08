@@ -161,8 +161,11 @@ def build_transforms():
     transforms["pelvis_2_foot"] = R.from_matrix(get_R_y(np.pi/2)).as_quat()
     
     ## Pelvis 2 foot if foot is on the Heel
-    transforms["pelvis_2_foot_r"] = R.from_matrix(get_R_x(-np.pi/2)).as_quat()
-    transforms["pelvis_2_foot_l"] = R.from_matrix(get_R_x(np.pi/2)).as_quat()
+    # transforms["pelvis_2_foot_r"] = R.from_matrix(get_R_x(-np.pi/2)).as_quat()
+    # transforms["pelvis_2_foot_l"] = R.from_matrix(get_R_x(np.pi/2)).as_quat()
+    
+    transforms["pelvis_2_foot_r"] = R.from_matrix(get_R_x(np.pi) @ get_R_y(np.pi/2)).as_quat()
+    transforms["pelvis_2_foot_l"] = R.from_matrix(get_R_x(np.pi) @ get_R_y(np.pi/2)).as_quat()
     
     return transforms
 

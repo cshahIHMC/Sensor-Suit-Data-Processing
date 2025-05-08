@@ -44,8 +44,11 @@ def build_transforms():
     # # Convert rotation matrices to quaternions
     transforms["Animation_2_pelvis"] = R.from_matrix(get_R_x(np.pi) @ get_R_y( np.pi/2)).as_quat()
     transforms["Animation_2_back"] = R.from_matrix(get_R_x(np.pi) @ get_R_y( np.pi/2)).as_quat()
-    transforms["Animation_2_thigh_r"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
-    transforms["Animation_2_thigh_l"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
+    # transforms["Animation_2_thigh_r"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
+    # transforms["Animation_2_thigh_l"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
+    transforms["Animation_2_thigh_l"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(np.pi/2) ).as_quat()
+    transforms["Animation_2_thigh_r"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(-np.pi/2) ).as_quat()
+    
     transforms["Animation_2_shank_l"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(np.pi/2) ).as_quat()
     transforms["Animation_2_shank_r"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(-np.pi/2) ).as_quat()
     
@@ -54,22 +57,81 @@ def build_transforms():
     transforms["Animation_2_foot_r"] = R.from_matrix(get_R_z(np.pi)).as_quat()
     
     ## Pelvis 2 foot if foot is on the Toe
-    transforms["pelvis_2_foot"] = R.from_matrix(get_R_y(np.pi/2)).as_quat()
+    # transforms["pelvis_2_foot"] = R.from_matrix(get_R_y(np.pi/2)).as_quat()
     
     ## Pelvis 2 foot if foot is on the Heel
-    transforms["pelvis_2_foot_r"] = R.from_matrix(get_R_x(-np.pi/2)).as_quat()
-    transforms["pelvis_2_foot_l"] = R.from_matrix(get_R_x(np.pi/2)).as_quat()
+    # transforms["pelvis_2_foot_r"] = R.from_matrix(get_R_x(-np.pi/2)).as_quat()
+    # transforms["pelvis_2_foot_l"] = R.from_matrix(get_R_x(np.pi/2)).as_quat()
+    
+    # transforms["pelvis_2_foot_r"] = R.from_matrix(get_R_x(np.pi) @ get_R_y(np.pi/2)).as_quat()
+    # transforms["pelvis_2_foot_l"] = R.from_matrix(get_R_x(np.pi) @ get_R_y(np.pi/2)).as_quat()
+    
+    
+    transforms["pelvis_2_foot_r"] = R.from_matrix(get_R_y(np.pi/2)).as_quat()
+    transforms["pelvis_2_foot_l"] = R.from_matrix(get_R_y(np.pi/2)).as_quat()
     
     return transforms
 
+
+# Apply transformations - key to unlocked pelvis
+def transform_quaternions_unlocked_pelvis(data, t_pose_q, transforms):
+    
+    # Data to return
+    transformed_data = {}
+    
+    A = R.from_quat(transforms["Animation_2_pelvis"])
+    
+    # Normalize t-pose
+    t_pose_q_norm = {imu: R.from_quat(q/np.linalg.norm(q), scalar_first=True) for imu, q in t_pose_q.items()}
+    # Compute tpose relative to pelvis frame
+    t_pose_q_norm_rel_pelvis = {imu: t_pose_q_norm["pelvis"].inv() * t_pose_q_norm[imu] for imu in t_pose_q_norm.keys()}
+    
+
+    
+    for imu, raw in data.items():
+        
+        # Normalize the raw data
+        q_raw = R.from_quat(raw / np.linalg.norm(raw, axis=1, keepdims=True), scalar_first=True)
+        
+        if "foot" in imu:
+            
+            frame_name = "pelvis_2_" + imu            
+            q_raw =  t_pose_q_norm["pelvis"] * R.from_quat(transforms[frame_name]) * q_raw * t_pose_q_norm[imu].inv() * R.from_quat(transforms[frame_name]).inv()
+       
+        # pelvis-local
+        q_local = t_pose_q_norm["pelvis"].inv() * q_raw
+
+        # animation-local
+        q_anim = A.inv() * q_local * A
+        # delta from T-pose
+        # q_rel  = t_pose_q_norm_rel_pelvis[imu].inv() * q_anim
+            
+        
+        transformed_data[imu] = q_anim.as_quat()
+        
+    return transformed_data
+        
+    
 # Apply transformations
-def transform_quaternions(data, t_pose_q, transforms):
+def transform_quaternions_locked_pelvis(data, t_pose_q, transforms):
     transformed_data = {}
 
     # Get the the initial quaternions from the t pose and normalize them
     t_pose_q_norm = {imu: R.from_quat(q/np.linalg.norm(q), scalar_first=True) for imu, q in t_pose_q.items()}
+    t_pose_q_norm_rel_pelvis = {imu: t_pose_q_norm["pelvis"].inv() * t_pose_q_norm[imu] for imu in t_pose_q_norm.keys()}
+    
+    measured_transform = {}
+    ### THis gives you the exact transform to go from animation to respective imu frame
+    for imu in t_pose_q_norm_rel_pelvis.keys():
+        
+        print(imu)
+        q = R.from_quat(transforms["Animation_2_pelvis"]).inv() * t_pose_q_norm_rel_pelvis[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+        deg = q.as_euler("xyz", degrees=True)
+        measured_transform[imu] = q.as_quat()
+        print(deg)
 
     quaternions = {}
+    
 
     # Loop over all IMU's and according to their frames apply the correct transformations
     for imu in data.keys():
@@ -78,18 +140,19 @@ def transform_quaternions(data, t_pose_q, transforms):
         quat_magnitude = np.linalg.norm(data[imu], axis=1, keepdims=True)
         quaternions[imu] = R.from_quat(data[imu]/quat_magnitude, scalar_first=True)
         
-        # if "foot" not in imu:
-        #     relative_rotations = R.from_matrix(np.eye(3)) * t_pose_q_norm[imu].inv() * quaternions[imu]
-        # else :
-        #     relative_rotations =  quaternions[imu] * t_pose_q_norm[imu].inv() * R.from_matrix(np.eye(3)) 
+
         
-        
-        # if "foot" not in imu:
+        # if "foot" not in imu and "pelvis" not in imu:
         #     name = "Animation_2_" + imu
-        #     relative_rotations = R.from_quat(transforms[name]).inv() * t_pose_q_norm[imu].inv() * quaternions[imu] * R.from_quat(transforms[name])
-        # else :
-        #     name = "Animation_2_" + imu
-        #     relative_rotations =  R.from_quat(transforms[name]) * quaternions[imu] * t_pose_q_norm[imu].inv() * R.from_quat(transforms[name]).inv()
+        #     relative_rotations =  R.from_quat(measured_transform[imu]).inv() * t_pose_q_norm[imu].inv() * quaternions[imu] 
+        #     # relative_rotations = pelvis_zeroing.inv() * relative_rotations
+        #     # relative_rotations = R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+        # elif "pelvis" in imu:
+        #     relative_rotations = R.from_quat(transforms["Animation_2_pelvis"]).inv() * t_pose_q_norm[imu].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+        #     pelvis_zeroing = relative_rotations
+        # else:
+        #     relative_rotations =  pelvis_zeroing.inv() * t_pose_q_norm[imu].inv() * quaternions[imu]
+            
             
         ############################# section for locked pelvis #################################
 
@@ -106,14 +169,10 @@ def transform_quaternions(data, t_pose_q, transforms):
             # Stuff that worked 
             
             # Taking it to the NED frame
-            # quaternions[imu] =   t_pose_q_norm["pelvis"] * R.from_quat(transforms["pelvis_2_foot"]) * quaternions[imu] * t_pose_q_norm[imu].inv() * R.from_quat(transforms["pelvis_2_foot"]).inv()
-            
-            # Staying in the body frame and then going directly to the animation frame
-            # quaternions[imu] = R.from_quat(transforms["Animation_2_foot_l"]).inv() * quaternions[imu] * t_pose_q_norm[imu].inv() * R.from_quat(transforms["Animation_2_foot_l"])
-            
-            
             # Feet IMU at the Toe Position
-            quaternions[imu] = t_pose_q_norm["pelvis"] * R.from_quat(transforms["pelvis_2_foot"]) * quaternions[imu] * t_pose_q_norm[imu].inv() * R.from_quat(transforms["pelvis_2_foot"]).inv()
+            frame_name = "pelvis_2_" + imu
+            quaternions[imu] = t_pose_q_norm["pelvis"] * R.from_quat(transforms[frame_name]) * quaternions[imu] * t_pose_q_norm[imu].inv() * R.from_quat(transforms[frame_name]).inv()
+            # quaternions[imu] =  t_pose_q_norm["pelvis"] * R.from_quat(transforms["pelvis_2_foot"]) * t_pose_q_norm[imu].inv() * quaternions[imu] * R.from_quat(transforms["pelvis_2_foot"]).inv() 
             
             
             # Feet IMU at the Heel Position
@@ -128,9 +187,6 @@ def transform_quaternions(data, t_pose_q, transforms):
         # Move all IMU's from the world to the pelvis frame and change the reference frame to the pelvis frame and rotate everything to the animation frame
         if imu != "pelvis" and "foot" not in imu:
             # Below transformations put all of the imu's in the pelvis frame and then in the animation frame
-            # relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
-            # relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
-            
             # R_anim_NED = t_pose_q_norm["pelvis"] * R.from_quat(transforms["Animation_2_pelvis"])
             relative_rotations = R.from_quat(transforms["Animation_2_pelvis"]).inv() * quaternions["pelvis"].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_pelvis"])
             # relative_rotations = R.from_quat(transforms["Animation_2_" + imu]).inv() * t_pose_q_norm[imu].inv() * quaternions[imu] * R.from_quat(transforms["Animation_2_" + imu])
@@ -235,10 +291,10 @@ def get_joint_positions(transformed_data, limb_structure, segment_lengths):
         for segment, (start, end) in limb_structure.items():
             if "pelvis" in segment:
                 ## If pelvis assuming it to be fixed
-                rot = R.from_matrix(np.eye(3))
+                # rot = R.from_matrix(np.eye(3))
                 
                 ## If pelvis is not fixed
-                # rot = R.from_quat(transformed_data[start][i])
+                rot = R.from_quat(transformed_data[start][i])
             else:
                 # rot_matrix = quaternion_to_matrix(transformed_data[end][i])
                 rot = R.from_quat(transformed_data[end][i])
@@ -403,6 +459,13 @@ def animate_motion_3d_pyqtgraph(positions, limb_structure):
 
     def update():
         nonlocal frame_idx
+        
+        if frame_idx >= num_frames:
+            timer.stop()
+            print("Done")
+            app.quit()   
+            return
+        
         for segment, (start, end) in limb_structure.items():
             start_pos = positions[start][frame_idx]
             end_pos = positions[end][frame_idx]
@@ -412,7 +475,7 @@ def animate_motion_3d_pyqtgraph(positions, limb_structure):
             spheres[segment].setData(pos=np.array([start_pos, end_pos]))  # Update both joints (start and end)
         
         
-        frame_idx = (frame_idx + 1) % num_frames  # Loop animation
+        frame_idx = (frame_idx + 1)  # Loop animation
 
     timer = QtCore.QTimer()
     timer.timeout.connect(update)
@@ -492,12 +555,12 @@ limb_keys = {
     
     # 04_21_2025_ Collection - Imu position on heel - Just walking
     
-    "pelvis": "imu2_quat",
-    "thigh_l": "imu1_quat",
-    "back": "imu3_quat",
-    "thigh_r": "imu6_quat", 
-    "shank_l": "imu4_quat",
-    "shank_r": "imu5_quat",
+    # "pelvis": "imu2_quat",
+    # "thigh_l": "imu1_quat",
+    # "back": "imu3_quat",
+    # "thigh_r": "imu6_quat", 
+    # "shank_l": "imu4_quat",
+    # "shank_r": "imu5_quat",
     
     # 04_28_2025_ Collection - Imu position on heel - 2 walking set collection
     
@@ -515,6 +578,19 @@ limb_keys = {
         # "thigh_r": "imu6_quat", 
         # "shank_l": "imu5_quat",
         # "shank_r": "imu4_quat",
+        
+    # 05_08_2025 - new thigh imu location + joint level collection + walk
+    
+    "pelvis": "imu2_quat",
+    "thigh_r": "imu5_quat", 
+    "shank_r": "imu6_quat",
+    "thigh_l": "imu1_quat",
+    "shank_l": "imu4_quat",
+    "back": "imu3_quat",
+    
+    
+    
+    
 
 
 
@@ -549,13 +625,22 @@ segment_lengths = {"back": 0.3, "pelvis_l": 0.2, "pelvis_r":0.2, "thigh_l":0.4, 
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_01_2025/05_01_2025_feet_on_toes_2.csv"
 
 # # Full data collection
-# csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_09_2025/04_09_2025_trial_2.csv"
+# csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_09_2025/04_09_2025_trial_1.csv"
 
 # Feet Validation Data Collection
-# csv_path = "/home/cshah/workspaces/sensorsuit/logs/1234_left_foot_up_down.csv"
+# csv_path = "/home/cshah/workspaces/sensorsuit/logs/123_right_foot_inside_out.csv"
 
 # 04_21_2025 -Foot and just walking collection
-csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_21_2025/04_21_2025_leg_swing.csv"
+# csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_28_2025/04_28_2025_walk_test_1.csv"
+# csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_01_2025/05_01_2025_sj_thigh_45_back.csv"
+
+
+# 05_08_2025 - SJ  + Test cases + Walk_test - New thigh imu location - IMP DATAset
+# csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_6_feet_on_toes_start_right_turn_l.csv"
+csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_6_feet_on_toes_turn_r_turn_l.csv"
+
+
+
 
 
 # Extracting the data from csv
@@ -580,8 +665,9 @@ extract_insole_imu_data(quaternion_data, data, data, t_pose_q)
 
 
 # Performing all the appropriate transformations to bring everything to the appropriate frames
-# transformed_data = transform_quaternions(quaternion_data, t_pose_q, body_transforms)
-transformed_data = transform_quaternions(quaternion_data, t_pose_q, body_transforms)
+transformed_data = transform_quaternions_locked_pelvis(quaternion_data, t_pose_q, body_transforms)
+# transformed_data = transform_quaternions_unlocked_pelvis(quaternion_data, t_pose_q, body_transforms)
+
 
 # Getting all the joint positions from the transformed data
 positions = get_joint_positions(transformed_data, limb_structure, segment_lengths)

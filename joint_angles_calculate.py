@@ -25,11 +25,11 @@ def set_limb_structure():
     
     # Child-parent joint combo
     joint_heirarchy = {
-        "pelvis" : "pelvis",
-        "thigh_r" : "pelvis",
-        "thigh_l" : "pelvis",
-        "shank_r" : "thigh_r",
-        "shank_l" : "thigh_l",
+        # "pelvis" : "pelvis",
+        # "thigh_r" : "pelvis",
+        # "thigh_l" : "pelvis",
+        # "shank_r" : "thigh_r",
+        # "shank_l" : "thigh_l",
         "foot_r" : "shank_r",
         "foot_l" : "shank_l"
         
@@ -41,22 +41,22 @@ def get_joint_imu_map():
     
     joint_imu_map = {
         "pelvis": "imu2_quat",
+        "thigh_r": "imu5_quat", 
+        "shank_r": "imu6_quat",
         "thigh_l": "imu1_quat",
+        "shank_l": "imu4_quat",
         # "back": "imu3_quat",
-        "thigh_r": "imu6_quat", 
-        "shank_l": "imu5_quat",
-        "shank_r": "imu4_quat",
         "foot_r": "R_insole",
         "foot_l": "L_insole"
     }
     
     joint_imu_map_microstrain = {
         "pelvis": "imu2_quat",
+        "thigh_r": "imu5_quat", 
+        "shank_r": "imu6_quat",
         "thigh_l": "imu1_quat",
+        "shank_l": "imu4_quat",
         # "back": "imu3_quat",
-        "thigh_r": "imu6_quat", 
-        "shank_l": "imu5_quat",
-        "shank_r": "imu4_quat",
     }
     
     joint_imu_map_insole = {
@@ -86,12 +86,19 @@ def transform_quaternions(data, t_pose_q, transforms):
         # Move the x sensor imu's from their own world reference frame to the NED world frame consistent with the microstrain
         if "foot" in imu:
             # Feet IMU at the Toe Position
-            quat_norm[imu] = t_pose_q_norm["pelvis"] * R.from_quat(transforms["pelvis_2_foot"]) * quat_norm[imu] * t_pose_q_norm[imu].inv() * R.from_quat(transforms["pelvis_2_foot"]).inv()
+            # quat_norm[imu] =  t_pose_q_norm["pelvis"] * R.from_quat(transforms["pelvis_2_foot"]) * quat_norm[imu] * t_pose_q_norm[imu].inv() * R.from_quat(transforms["pelvis_2_foot"]).inv()
+            # quat_norm[imu] = t_pose_q_norm["pelvis"] * R.from_quat(transforms["pelvis_2_foot"]) * t_pose_q_norm[imu].inv() * quat_norm[imu] * R.from_quat(transforms["pelvis_2_foot"]).inv()
+            relative_rotations =  quat_norm[imu] * t_pose_q_norm[imu].inv() 
+        else:
+            relative_rotations = quat_norm[imu]
         
+        # # # else:
+        # # # relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quat_norm["pelvis"].inv() * quat_norm[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+        # # relative_rotations =  quat_norm["pelvis"].inv() * quat_norm[imu] 
         
-        relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quat_norm["pelvis"].inv() * quat_norm[imu] * R.from_quat(transforms["Animation_2_pelvis"])
-        # relative_rotations =  quat_norm["pelvis"].inv() * quat_norm[imu] 
+        # relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * t_pose_q_norm["pelvis"].inv() * quat_norm[imu] * R.from_quat(transforms["Animation_2_pelvis"])
 
+        # relative_rotations = quat_norm[imu]
 
         # Stored the transformed_data
         transformed_data[imu] = relative_rotations.as_quat()
@@ -122,7 +129,7 @@ def cal_joint_angles(quaternion_data, joint_heirarchy, transforms):
         
         joint_quaternions[child]  = quaternion_data[child]
         
-        joint_angles[child] = R.from_quat(joint_quaternions[child]).as_euler('zyx', degrees=True)
+        joint_angles[child] = R.from_quat(joint_quaternions[child]).as_euler('xyz', degrees=True)
         
          
     return joint_angles
@@ -169,7 +176,9 @@ def plot_joint_angles(joint_angles, GRF):
 def main():
     
     # File Path
-    csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_01_2025/05_01_2025_sj_thigh_45_front.csv"
+    csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_6_feet_on_toes_start_right_turn_l.csv"
+    # csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_6_feet_on_toes_turn_r_turn_l.csv"
+
     
     # Load the data to a csv
     data = Utility.load_quaternion_data(csv_path=csv_path)
