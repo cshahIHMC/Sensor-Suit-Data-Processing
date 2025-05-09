@@ -20,16 +20,16 @@ def set_limb_structure():
         "shank_r": ("thigh_r", "shank_r"),
         "foot_l": ("shank_l", "foot_l"),
         "foot_r": ("shank_r", "foot_r"),
-        # "back": ("pelvis", "back")
+        "back": ("pelvis", "back")
     }
     
     # Child-parent joint combo
     joint_heirarchy = {
-        # "pelvis" : "pelvis",
-        # "thigh_r" : "pelvis",
-        # "thigh_l" : "pelvis",
-        # "shank_r" : "thigh_r",
-        # "shank_l" : "thigh_l",
+        "pelvis" : "pelvis",
+        "thigh_r" : "pelvis",
+        "thigh_l" : "pelvis",
+        "shank_r" : "thigh_r",
+        "shank_l" : "thigh_l",
         "foot_r" : "shank_r",
         "foot_l" : "shank_l"
         
@@ -75,6 +75,9 @@ def transform_quaternions(data, t_pose_q, transforms):
     
     # Get the t pose quat and normalize them
     t_pose_q_norm = {imu: R.from_quat(q/np.linalg.norm(q), scalar_first=True) for imu, q in t_pose_q.items()}
+    # Compute tpose relative to pelvis frame
+    t_pose_q_norm_rel_pelvis = {imu: t_pose_q_norm["pelvis"].inv() * t_pose_q_norm[imu] for imu in t_pose_q_norm.keys()}
+    # feet_calibration_q_norm = {imu: R.from_quat(q/np.linalg.norm(q), scalar_first=True) for imu, q in feet_calibration_q.items()}
     
     # Loop over all IMU's and according to their frames apply the correct transformations
     for imu in data.keys():
@@ -86,14 +89,29 @@ def transform_quaternions(data, t_pose_q, transforms):
         # Move the x sensor imu's from their own world reference frame to the NED world frame consistent with the microstrain
         if "foot" in imu:
             # Feet IMU at the Toe Position
-            # quat_norm[imu] =  t_pose_q_norm["pelvis"] * R.from_quat(transforms["pelvis_2_foot"]) * quat_norm[imu] * t_pose_q_norm[imu].inv() * R.from_quat(transforms["pelvis_2_foot"]).inv()
+            quat_norm[imu] =  t_pose_q_norm["pelvis"] * R.from_quat(transforms["pelvis_2_foot"]) * quat_norm[imu] * t_pose_q_norm[imu].inv() * R.from_quat(transforms["pelvis_2_foot"]).inv()
             # quat_norm[imu] = t_pose_q_norm["pelvis"] * R.from_quat(transforms["pelvis_2_foot"]) * t_pose_q_norm[imu].inv() * quat_norm[imu] * R.from_quat(transforms["pelvis_2_foot"]).inv()
-            relative_rotations =  quat_norm[imu] * t_pose_q_norm[imu].inv() 
-        else:
-            relative_rotations = quat_norm[imu]
+            # q_boot = feet_calibration_q_norm[imu]
+            # q_t_pose = t_pose_q_norm[imu]
+            
+            # yaw, _, _ = q_t_pose.as_euler('zyx', degrees=False)
+            # q_yaw_zero = R.from_euler('zyx', [yaw, 0.0, 0.0], degrees=False)
+            
+            # _, pitch, roll = q_boot.as_euler('zyx', degrees=False)
+            # q_tilt_zero = R.from_euler('zyx', [0.0, pitch, roll], degrees=False)
+            
+            # relative_rotations = quat_norm[imu] * q_yaw_zero.inv() * (q_yaw_zero.inv() * q_t_pose).inv()
+        # else:
+        #     relative_rotations = quat_norm[imu]
+            
+
         
         # # # else:
-        # # # relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quat_norm["pelvis"].inv() * quat_norm[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+        if "foot" not in imu:
+            relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * t_pose_q_norm_rel_pelvis[imu].inv() * quat_norm["pelvis"].inv() * quat_norm[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+        else:
+            relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * quat_norm["pelvis"].inv() * quat_norm[imu] * R.from_quat(transforms["Animation_2_pelvis"])
+            
         # # relative_rotations =  quat_norm["pelvis"].inv() * quat_norm[imu] 
         
         # relative_rotations =  R.from_quat(transforms["Animation_2_pelvis"]).inv() * t_pose_q_norm["pelvis"].inv() * quat_norm[imu] * R.from_quat(transforms["Animation_2_pelvis"])
@@ -176,8 +194,17 @@ def plot_joint_angles(joint_angles, GRF):
 def main():
     
     # File Path
-    csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_6_feet_on_toes_start_right_turn_l.csv"
+    ## Feet Debugging
+    # csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_6_feet_on_toes_start_right_turn_l.csv"
     # csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_6_feet_on_toes_turn_r_turn_l.csv"
+    
+    ## Standing Straight
+    csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_2_turn_right_turn_left.csv"
+    
+    ## Joint Tests
+    # csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_3_thigh_r_front_45.csv"
+    
+    # feet_calibration_csv = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_1_stand_straight.csv"
 
     
     # Load the data to a csv
@@ -192,7 +219,9 @@ def main():
     limb_structure, joint_heirarchy = set_limb_structure()
     joint_imu_map, joint_imu_map_microstrain, joint_imu_map_insole = get_joint_imu_map()
     
-    quaternion_data, t_pose_quat = Utility.extract_data(data=data, joint_imu_map_microstrain=joint_imu_map_microstrain, joint_imu_map_insole=joint_imu_map_insole)
+    quaternion_data, t_pose_quat = Utility.extract_data(data=data, 
+                                                                            joint_imu_map_microstrain=joint_imu_map_microstrain, 
+                                                                            joint_imu_map_insole=joint_imu_map_insole)
     
     # Transform the quaternions - Zero them to the pelvis frame and transform to animation frame
     transformed_quat = transform_quaternions(data=quaternion_data, t_pose_q=t_pose_quat, transforms=body_transforms)
