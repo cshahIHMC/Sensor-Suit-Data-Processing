@@ -148,8 +148,20 @@ def build_transforms():
     # # Convert rotation matrices to quaternions
     transforms["Animation_2_pelvis"] = R.from_matrix(get_R_x(np.pi) @ get_R_y( np.pi/2)).as_quat()
     transforms["Animation_2_back"] = R.from_matrix(get_R_x(np.pi) @ get_R_y( np.pi/2)).as_quat()
-    transforms["Animation_2_thigh_r"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
-    transforms["Animation_2_thigh_l"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
+    # transforms["Animation_2_thigh_r"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
+    # transforms["Animation_2_thigh_l"] = R.from_matrix(get_R_y(-np.pi/2)).as_quat()
+    
+    transforms["Animation_2_thigh_l"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(np.pi/2) ).as_quat()
+    transforms["Animation_2_thigh_r"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(-np.pi/2) ).as_quat()
+    
+    # transforms["Animation_2_thigh_l"] = R.from_euler('xyz',[90, -90, 0], degrees=True).as_quat()
+    # transforms["Animation_2_thigh_r"] = R.from_euler('xyz',[-90, -90, 0], degrees=True).as_quat()
+    
+        
+    # transforms["Animation_2_shank_l"] = R.from_euler('xyz',[90, -90, 0], degrees=True).as_quat()
+    # transforms["Animation_2_shank_r"] = R.from_euler('xyz',[-90, -90, 0], degrees=True).as_quat()
+    
+    
     transforms["Animation_2_shank_l"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(np.pi/2) ).as_quat()
     transforms["Animation_2_shank_r"] = R.from_matrix(get_R_y(-np.pi/2) @ get_R_x(-np.pi/2) ).as_quat()
     
@@ -157,15 +169,41 @@ def build_transforms():
     transforms["Animation_2_foot_l"] = R.from_matrix(get_R_z(np.pi)).as_quat()
     transforms["Animation_2_foot_r"] = R.from_matrix(get_R_z(np.pi)).as_quat()
     
+    # transforms["Animation_2_foot_l"] = R.from_matrix(np.eye(3)).as_quat()
+    # transforms["Animation_2_foot_r"] = R.from_matrix(np.eye(3)).as_quat()
+    
     ## Pelvis 2 foot if foot is on the Toe
     transforms["pelvis_2_foot"] = R.from_matrix(get_R_y(np.pi/2)).as_quat()
     
     ## Pelvis 2 foot if foot is on the Heel
-    # transforms["pelvis_2_foot_r"] = R.from_matrix(get_R_x(-np.pi/2)).as_quat()
-    # transforms["pelvis_2_foot_l"] = R.from_matrix(get_R_x(np.pi/2)).as_quat()
+    transforms["pelvis_2_foot_r"] = R.from_matrix(get_R_y(np.pi/2)).as_quat()
+    transforms["pelvis_2_foot_l"] = R.from_matrix(get_R_y(np.pi/2)).as_quat()
     
-    transforms["pelvis_2_foot_r"] = R.from_matrix(get_R_x(np.pi) @ get_R_y(np.pi/2)).as_quat()
-    transforms["pelvis_2_foot_l"] = R.from_matrix(get_R_x(np.pi) @ get_R_y(np.pi/2)).as_quat()
+    # transforms["pelvis_2_foot_r"] = R.from_matrix(get_R_x(np.pi) @ get_R_y(np.pi/2)).as_quat()
+    # transforms["pelvis_2_foot_l"] = R.from_matrix(get_R_x(np.pi) @ get_R_y(np.pi/2)).as_quat()
+    
+    return transforms
+
+# Transforms to go anatomical frame to sensor frame - all fo these are extrinsic transformations going right to left
+def build_transforms_2():
+    transforms = {}
+    
+    transforms["Anatomical_2_pelvis"] = R.from_matrix( get_R_z(np.pi) @ get_R_y(-np.pi/2) )
+    transforms["Anatomical_2_back"] = R.from_matrix( get_R_z(np.pi) @ get_R_y(-np.pi/2) )
+    
+    transforms["Anatomical_2_thigh_r"] = R.from_matrix( get_R_z(-np.pi/2) @ get_R_y(-np.pi/2) )
+    transforms["Anatomical_2_thigh_l"] = R.from_matrix( get_R_z(np.pi/2) @ get_R_y(-np.pi/2) )
+    
+    transforms["Anatomical_2_shank_r"] = R.from_matrix( get_R_z(-np.pi/2) @ get_R_y(-np.pi/2) )
+    transforms["Anatomical_2_shank_l"] = R.from_matrix( get_R_z(np.pi/2) @ get_R_y(-np.pi/2) )
+    
+    
+    transforms["pelvis_2_foot"] = R.from_matrix( get_R_x(np.pi) @ get_R_y(np.pi/2) )
+
+    
+    
+
+
     
     return transforms
 
