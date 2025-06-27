@@ -14,7 +14,7 @@ import seaborn as sns
 while (True):
  
     # file_path for walking data
-    file_path = "/home/cshah/workspaces/sensorsuit/logs/12_tap_test.csv"
+    file_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_start_0_walk_test.csv"
 
     if os.path.isfile(file_path):
 
@@ -55,9 +55,9 @@ for i in range(1, num_imus + 1):
 sensor_suit_imu_data = {
      "Back Pack IMU": "imu3",
      "Pelvis": "imu2",
-     "Right Thigh": "imu6",
+     "Right Thigh": "imu5",
      "Left Thigh": "imu1",
-     "Right Shank": "imu5",
+     "Right Shank": "imu6",
      "Left Shank": "imu4",
      "Right Foot": "R_insole",
      "Left Foot": "L_insole"

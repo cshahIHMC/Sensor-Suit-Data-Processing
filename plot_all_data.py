@@ -74,7 +74,7 @@ def plot_all_gyro_data(df, file_name, col_names, data_keys):
     
 
 # csv_path = "/home/cshah/workspaces/sensorsuit/logs/04_21_2025/04_21_2025_leg_swing.csv"
-csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_01_2025/05_01_2025_foot_planted_move_shank.csv"
+csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_start_0_walk_test.csv"
 
 
 df = pd.read_csv(csv_path)
@@ -83,9 +83,9 @@ data_keys = {
     "back": "imu3",
     "pelvis": "imu2",
     "thigh_l": "imu1",
-    "thigh_r": "imu6", 
+    "thigh_r": "imu5", 
     "shank_l": "imu4",
-    "shank_r": "imu5",
+    "shank_r": "imu6",
     "foot_l": "L_insole",
     "foot_r": "R_insole"
 }
@@ -94,9 +94,9 @@ col_keys = {
     "imu3": "back",
     "imu2": "pelvis",
     "imu1": "thigh_l",
-    "imu6": "thigh_r", 
+    "imu5": "thigh_r", 
     "imu4": "shank_l",
-    "imu5": "shank_r",
+    "imu6": "shank_r",
     "L_insole": "foot_l",
     "R_insole": "foot_r"
 }
