@@ -83,26 +83,26 @@ def get_joint_heirarchy():
     
     return joint_heirarchy
 
+# this function returns the joint-imu map
 def get_joint_imu_map():
     
     joint_imu_map = {
-             "pelvis": "imu2_quat",
-        "thigh_r": "imu1_quat", 
-        "shank_r": "imu6_quat",
-        "thigh_l": "imu5_quat",
-        "shank_l": "imu4_quat",
-        # "back": "imu3_quat",
-
+    "pelvis": "imu2_quat",
+    "thigh_r": "imu5_quat", 
+    "shank_r": "imu6_quat",
+    "thigh_l": "imu1_quat",
+    "shank_l": "imu4_quat",
+    # "back": "imu3_quat",
         "foot_r": "R_insole",
         "foot_l": "L_insole"
     }
     
     joint_imu_map_microstrain = {
-                          "pelvis": "imu2_quat",
-        "thigh_r": "imu1_quat", 
-        "shank_r": "imu6_quat",
-        "thigh_l": "imu5_quat",
-        "shank_l": "imu4_quat",
+    "pelvis": "imu2_quat",
+    "thigh_r": "imu5_quat", 
+    "shank_r": "imu6_quat",
+    "thigh_l": "imu1_quat",
+    "shank_l": "imu4_quat",
         # "back": "imu3_quat",
 
 
@@ -178,6 +178,7 @@ def transform_quaternions(data, t_pose_q, transforms):
             
             
         
+        # Correcting imu wise gravity vectors
         t_pose_z = t_pose_rot.apply([0, 0, 1])
         
         q_gravity_align = R.align_vectors([gravity_vector], [t_pose_z])[0]
@@ -302,36 +303,6 @@ def cal_joint_angles(quaternion_data, joint_heirarchy, transforms):
         #     joint_quaternions[child] = quaternion_data[parent].inv() * quaternion_data[child]
             
         joint_angles[child] = joint_quaternions[child].as_euler('xyz', degrees=True)
-
-        # rotvec = joint_quaternions[child].as_rotvec()
-        
-        # angle_rad = np.linalg.norm(rotvec)
-        # angle_deg = np.degrees(angle_rad)
-
-        # if angle_rad > 1e-8:
-        #     axis = rotvec / angle_rad
-
-        #     # Project total rotation onto anatomical axes
-        #     angle_x = angle_deg * np.dot(axis, [1, 0, 0])
-        #     angle_y = angle_deg * np.dot(axis, [0, 1, 0])
-        #     angle_z = angle_deg * np.dot(axis, [0, 0, 1])
-        # else:
-        #     # If the rotation is ~0, just zero everything
-        #     axis = np.array([0.0, 0.0, 0.0])
-        #     angle_x = angle_y = angle_z = 0.0
-        
-        # # angle_x = euler_angles[:, 0]
-        # # angle_y = euler_angles[:, 1]
-        # # angle_z = euler_angles[:, 2]
-
-        # # Store in your joint_angles dict
-        # joint_angles[child] = {
-        #     "angle_deg": angle_deg,     # Total rotation
-        #     # "axis": axis,               # Rotation axis (unit vector)
-        #     "angle_x": angle_x,         # Component of rotation about X
-        #     "angle_y": angle_y,         # Component of rotation about Y
-        #     "angle_z": angle_z          # Component of rotation about Z
-        # }
         
     return joint_angles
 
@@ -408,7 +379,7 @@ def plot_joint_angles(joint_angles, GRF):
     
 def main():
     
-    csv_path = "/home/cshah/workspaces/sensorsuit/logs/06_16/06_16_stand_turn_stand.csv"
+    csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_start_0_walk_test.csv"
     
     # Load the data to a csv
     data = load_quaternion_data(csv_path=csv_path)
@@ -422,8 +393,8 @@ def main():
     joint_imu_map, joint_imu_map_microstrain, joint_imu_map_insole = get_joint_imu_map()
     
     quaternion_data, t_pose_quat = extract_data(data=data, 
-                                                        joint_imu_map_microstrain=joint_imu_map_microstrain, 
-                                                        joint_imu_map_insole=joint_imu_map_insole)
+                                                joint_imu_map_microstrain=joint_imu_map_microstrain, 
+                                                joint_imu_map_insole=joint_imu_map_insole)
     
 
     # Transform the quaternions - Zero them to the pelvis frame and transform to animation frame

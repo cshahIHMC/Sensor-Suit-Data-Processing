@@ -42,23 +42,23 @@ def set_limb_structure():
 def get_joint_imu_map():
     
     joint_imu_map = {
-        "pelvis": "imu2_quat",
-        "thigh_r": "imu1_quat", 
-        "shank_r": "imu6_quat", # 06/17 - imu5, 06/16 - imu6
-        "thigh_l": "imu5_quat",
-        "shank_l": "imu4_quat",# 06/17 - imu4, 06/16 - imu4
-        # "back": "imu3_quat",
+    "pelvis": "imu2_quat",
+    "thigh_r": "imu5_quat", 
+    "shank_r": "imu6_quat",
+    "thigh_l": "imu1_quat",
+    "shank_l": "imu4_quat",
+    # "back": "imu3_quat",
         "foot_r": "R_insole",
         "foot_l": "L_insole"
     }
     
     joint_imu_map_microstrain = {
-        "pelvis": "imu2_quat",
-        "thigh_r": "imu1_quat", 
-        "shank_r": "imu6_quat",
-        "thigh_l": "imu5_quat",
-        "shank_l": "imu4_quat",
-        # "back": "imu3_quat",
+    "pelvis": "imu2_quat",
+    "thigh_r": "imu5_quat", 
+    "shank_r": "imu6_quat",
+    "thigh_l": "imu1_quat",
+    "shank_l": "imu4_quat",
+    # "back": "imu3_quat",
     }
     
     joint_imu_map_insole = {
@@ -111,15 +111,7 @@ def transform_quaternions(data, t_pose_q, transforms):
         # Step 3: Correction quaternion (sensor-to-anatomical)
         q_segment_correction = q_pelvis_anatomical.inv() * q_anatomical
         
-        # print(q_correction.as_euler("xyz", degrees=True))
-      
-        
-       
-    
-        frame_name = "Anatomical_2_" + imu
-        
-        # relative_rotations = transforms[frame_name] * t_pose_q_norm[imu].inv() * quat_norm[imu] * transforms[frame_name].inv()
-        
+        # print(q_correction.as_euler("xyz", degrees=True))       
       
         
         if "foot_r" in imu:
@@ -131,11 +123,11 @@ def transform_quaternions(data, t_pose_q, transforms):
             # toe_transform_r = np.mean(toe_transform_r, axis=0)
             # print(toe_transform_r)
             
-            toe_transform_r_1 = [ 0.57662261, -0.81659031,  0.00673089,  0.0213726 ]
+            toe_transform_r = [ 0.57662261, -0.81659031,  0.00673089,  0.0213726 ]
              
-            # 10min in Calibration
+            # 10min in Calibration (Heel)
             transform_r = [ 0.96805752,  0.24972168, -0.01774981,  0.01163004]
-            relative_rotations = R.from_quat(toe_transform_r_1) * quat_norm[imu]
+            relative_rotations = R.from_quat(transform_r) * quat_norm[imu]
             # relative_rotations = quat_norm[imu]
         elif "foot_l" in imu:
             
@@ -144,13 +136,13 @@ def transform_quaternions(data, t_pose_q, transforms):
             # toe_transform_l = np.mean(toe_transform_l, axis=0)
             # print(toe_transform_l)
             
-            toe_transform_l_1 = [ 0.40604399, -0.91360987,  0.0097929,   0.0145006 ]
+            toe_transform_l = [ 0.40604399, -0.91360987,  0.0097929,   0.0145006 ]
             
-            # 10min in Calibration
+            # 10min in Calibration (Heel)
             transform_l = [ 0.21206732,  0.97710702, -0.01205927, -0.00935059]
  
             # relative_rotations =      (R.from_quat(transform_l) * t_pose_q_norm[imu]).inv() * R.from_quat(transform_l) * quat_norm[imu]
-            relative_rotations = R.from_quat(toe_transform_l_1) * quat_norm[imu]        
+            relative_rotations = R.from_quat(transform_l) * quat_norm[imu]        
         else:
             # relative_rotations = t_pose_q_norm[imu].inv() * quat_norm[imu] 
             relative_rotations = quat_norm[imu] 
@@ -284,7 +276,7 @@ def plot_joint_angles(joint_angles, GRF):
 
 def main():
     
-    csv_path = "/home/cshah/workspaces/sensorsuit/logs/06_16_stand_turn_stand.csv"
+    csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_start_0_walk_test.csv"
 
     # Load the data to a csv
     data = Utility.load_quaternion_data(csv_path=csv_path)
