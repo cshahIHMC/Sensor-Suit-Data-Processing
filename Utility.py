@@ -283,7 +283,7 @@ def extract_data(data, joint_imu_map_microstrain, joint_imu_map_insole):
     return quat_data, t_pose_q
         
 # Combine the sensorsuit data frame and the captury dataframe and write the whole dataframe as a csv so we can use it for training
-def write_dataframe_2_csv(dict_1, dict_2, acc_gyro_df):
+def write_dataframe_2_csv(dict_1, dict_2, acc_gyro_df=None):
     
     df_1 = pd.DataFrame([dict_1])
     df_2 = pd.DataFrame([dict_2])
@@ -304,13 +304,13 @@ def write_dataframe_2_csv(dict_1, dict_2, acc_gyro_df):
         sep_df[f"{col}_qW"] = df_combined[col][0][:,3]
         
     # The general assumption when writing this function is that the dataframes are the same length
-    df_quats_acc_gyro = pd.concat([sep_df, acc_gyro_df], axis=1) 
+    # df_quats_acc_gyro = pd.concat([sep_df, acc_gyro_df], axis=1) 
     
     
 
     # Write to CSV, formatting floats with up to 6 decimal places
-    csv_path = "/home/cshah/workspaces/deepPhase based work/Data/Quaternion_training_data_pelvis_frame_rel_quats_with_acc_gyro.csv"
-    df_quats_acc_gyro.to_csv(csv_path,
+    csv_path = "/home/cshah/workspaces/deepPhase based work/Data/Full Training - Gyro + Joint Angles/07_09_RM_quat.csv"
+    sep_df.to_csv(csv_path,
           index=False,
           float_format='%.6f',      # e.g. 0.123457
           quoting=csv.QUOTE_MINIMAL)
@@ -321,12 +321,12 @@ def extract_acc_gyro_data(all_data, joint_imu_map):
     
     columns_to_extract = []
     
-    for keys, cols in joint_imu_map.items():
+    # for keys, cols in joint_imu_map.items():
         
         
-        columns_to_extract.append(cols+"_accel_x")
-        columns_to_extract.append(cols+"_accel_y")
-        columns_to_extract.append(cols+"_accel_z")
+    #     columns_to_extract.append(cols+"_accel_x")
+    #     columns_to_extract.append(cols+"_accel_y")
+    #     columns_to_extract.append(cols+"_accel_z")
         
         
     for keys, cols in joint_imu_map.items():

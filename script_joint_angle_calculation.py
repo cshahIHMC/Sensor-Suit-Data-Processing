@@ -87,22 +87,24 @@ def get_joint_heirarchy():
 def get_joint_imu_map():
     
     joint_imu_map = {
-    "pelvis": "imu2_quat",
-    "thigh_r": "imu5_quat", 
-    "shank_r": "imu6_quat",
-    "thigh_l": "imu1_quat",
-    "shank_l": "imu4_quat",
-    # "back": "imu3_quat",
+        "pelvis": "imu2_quat",
+        "thigh_r": "imu6_quat", 
+        "shank_r": "imu4_quat",
+        "thigh_l": "imu1_quat",
+        "shank_l": "imu5_quat",
+        # "back": "imu3_quat",
+
+
         "foot_r": "R_insole",
         "foot_l": "L_insole"
     }
     
     joint_imu_map_microstrain = {
-    "pelvis": "imu2_quat",
-    "thigh_r": "imu5_quat", 
-    "shank_r": "imu6_quat",
-    "thigh_l": "imu1_quat",
-    "shank_l": "imu4_quat",
+        "pelvis": "imu2_quat",
+        "thigh_r": "imu6_quat", 
+        "shank_r": "imu4_quat",
+        "thigh_l": "imu1_quat",
+        "shank_l": "imu5_quat",
         # "back": "imu3_quat",
 
 
@@ -272,7 +274,7 @@ def transform_quaternions(data, t_pose_q, transforms):
             # # # relative_rotations = q_gravity_align_pelvis * C
             relative_rotations = C
 
-        
+        # relative_rotations = quat_norm[imu]
         # relative_rotations = q_segment_correction * relative_rotations
         
         # Stored the transformed_data
@@ -292,9 +294,9 @@ def cal_joint_angles(quaternion_data, joint_heirarchy, transforms):
         print("Child ", child)
         print("Parent ", parent)
         
-        # joint_quaternions[child] = quaternion_data[child]
+        joint_quaternions[child] = quaternion_data[child]
         
-        joint_quaternions[child] = quaternion_data[parent].inv() * quaternion_data[child] 
+        # joint_quaternions[child] = quaternion_data[parent].inv() * quaternion_data[child] 
         
         
         # if "pelvis" in child or "thigh" in child:
@@ -379,7 +381,7 @@ def plot_joint_angles(joint_angles, GRF):
     
 def main():
     
-    csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_start_0_walk_test.csv"
+    csv_path = "/home/cshah/workspaces/sensorsuit/SensorSuit-logs/07_09_2025_Nicole/07_09_2025_GA_Tech_sensor_Config/07_09_SQ_10_01.csv"
     
     # Load the data to a csv
     data = load_quaternion_data(csv_path=csv_path)

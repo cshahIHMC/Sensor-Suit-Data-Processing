@@ -139,3 +139,44 @@
         # "back": "imu3_quat",
 
 
+                # 06_30 - sensor_suit + Captury
+        "pelvis": "imu2_quat",
+        "thigh_r": "imu1_quat", 
+        "shank_r": "imu5_quat",
+        "thigh_l": "imu6_quat",
+        "shank_l": "imu4_quat",
+        # "back": "imu3_quat",
+
+
+                # 07_02 - sensor_suit + Captury - Chinmay Collections
+        "pelvis": "imu2_quat",
+        "thigh_r": "imu1_quat", 
+        "shank_r": "imu5_quat",
+        "thigh_l": "imu6_quat",
+        "shank_l": "imu4_quat",
+        # "back": "imu3_quat",
+
+                # 07_09 - sensor_suit + Captury - Nicole Collections - CHinmay Sensor Config
+        "pelvis": "imu2_quat",
+        "thigh_r": "imu5_quat", 
+        "shank_r": "imu4_quat",
+        "thigh_l": "imu1_quat",
+        "shank_l": "imu6_quat",
+        # "back": "imu3_quat",
+
+                        # 07_09 - sensor_suit + Captury - Nicole Collections - Gatech Sensor Config
+        "pelvis": "imu2_quat",
+        "thigh_r": "imu6_quat", 
+        "shank_r": "imu4_quat",
+        "thigh_l": "imu1_quat",
+        "shank_l": "imu5_quat",
+        # "back": "imu3_quat",
+
+
+                        # 07_16- sensor_suit + Captury - Nicole Collections - Gatech Sensor Config
+        "pelvis": "imu2_quat",
+        "thigh_r": "imu1_quat", 
+        "shank_r": "imu4_quat",
+        "thigh_l": "imu6_quat",
+        "shank_l": "imu5_quat",
+        # "back": "imu3_quat",

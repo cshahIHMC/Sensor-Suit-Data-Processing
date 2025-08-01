@@ -12,6 +12,7 @@ from scipy.spatial.transform import Rotation as R, Slerp
 from scipy.signal import butter, filtfilt
 import csv
 
+
 def set_limb_structure():
     
     limb_structure = {
@@ -44,12 +45,12 @@ def get_joint_imu_map():
     
     # Joint IMU Map
     joint_imu_map = {
-        "pelvis": "imu2",
-        "thigh_r": "imu5", 
-        "shank_r": "imu4",
-        "thigh_l": "imu1",
-        "shank_l": "imu6",
-        # "back": "imu3",
+        "pelvis": "imu2_quat",
+        "thigh_r": "imu5_quat", 
+        "shank_r": "imu4_quat",
+        "thigh_l": "imu1_quat",
+        "shank_l": "imu6_quat",
+        # "back": "imu3_quat",
         "foot_r": "R_insole",
         "foot_l": "L_insole"
     }
@@ -73,7 +74,7 @@ def get_joint_imu_map():
 # Apply transformations to the quaternions
 # - Zero with Pelvis
 # - Bring them to animation frame
-def transform_quaternions(data, t_pose_q, transforms, joint_heirarchy, t_plot, t_ss_end):
+def transform_quaternions(data, t_pose_q, transforms, joint_heirarchy):
     
     transformed_data = {}
     quat_norm = {}
@@ -121,7 +122,7 @@ def transform_quaternions(data, t_pose_q, transforms, joint_heirarchy, t_plot, t
             
             relative_rotations = B.inv() * A 
              
-        raw_quaternions[f"{imu}_ss"] = (relative_rotations[t_plot:t_ss_end])
+        raw_quaternions[f"{imu}_ss"] = (relative_rotations[1359:7059])
         
         print(len(raw_quaternions[f"{imu}_ss"]))
         # Stored the transformed_data
@@ -201,49 +202,65 @@ def cal_joint_angles(quaternion_data, joint_heirarchy, transforms, raw_quaternio
         
     return joint_angles, joint_rel_raw_quaternions
 
-# function to plot all the joint angles vs captury angles
-def plot_joint_angles(joint_angles, GRF, captury_joint_angles, t_plot):
+def re_structure_ss_df(ss_df):
     
-    fig, axes = plt.subplots(4, len(list(joint_angles.keys())), figsize=(20,12), sharex=True)
+    
+    ss_new_df = pd.DataFrame()
+    
+    Joint_angles_col = ["hip_flexion_r",
+                        "hip_rotation_r",
+                        "hip_adduction_r",
+                        "hip_flexion_l",
+                        "hip_rotation_l",
+                        "hip_adduction_l",
+                        "knee_angle_r",
+                        "knee_angle_l",
+                        "ankle_angle_r",
+                        "ankle_angle_l"]
+    
+    ss_new_df["hip_flexion_r"] = ss_df["thigh_r"]["angle_x"]
+    ss_new_df["hip_rotation_r"] = ss_df["thigh_r"]["angle_y"]
+    ss_new_df["hip_adduction_r"] = ss_df["thigh_r"]["angle_z"]
+    
+    ss_new_df["hip_flexion_l"] = ss_df["thigh_l"]["angle_x"]
+    ss_new_df["hip_rotation_l"] = ss_df["thigh_l"]["angle_y"]
+    ss_new_df["hip_adduction_l"] = ss_df["thigh_l"]["angle_z"]
+    
+    ss_new_df["knee_angle_r"] = ss_df["shank_r"]["angle_x"]
+    
+    ss_new_df["knee_angle_l"] = ss_df["shank_l"]["angle_x"]
+    
+    ss_new_df["ankle_angle_r"] = ss_df["foot_r"]["angle_x"]
+    
+    ss_new_df["ankle_angle_l"] = ss_df["foot_l"]["angle_x"]
+    
+    return ss_new_df
+    
+
+# function to plot all the joint angles vs captury angles
+def plot_joint_angles(joint_angles, vicon_joint_angles):
+    
+    fig, axes = plt.subplots(len(list(joint_angles.keys())),1, figsize=(20,12), sharex=True)
        
     for i, joint in enumerate(joint_angles.keys()):
         
-        joint_angle = joint_angles[joint]
-        captury_joint_angle = captury_joint_angles[joint]
-        
+
+
         # lim = 180
         # These are time steps to synchronize captury and sensorsuit data
-        t_ss = t_plot
+        t_ss = 1359
         t_cap = 0
         
-        if "_r" in joint:
-            factor = -1
-        else:
-            factor = 1
-        
-        
+                
         # Plot X axis
-        axes[0,i].plot(joint_angle["angle_x"][t_ss:], linewidth=1, color="red")
-        axes[0,i].plot(factor * captury_joint_angle[t_cap:,0], linewidth=1, alpha = 0.5, color="red")
-        axes[0,i].set_title(joint + "_X (deg)")
+        x = np.arange(len(joint_angles[joint]) - t_ss)
+        axes[i].plot(x, joint_angles[joint][t_ss:], linewidth=1, color="red")
         
-        # Plot Y axis
-        axes[1,i].plot(joint_angle["angle_y"][t_ss:], linewidth=1, color="green")
-        axes[1,i].plot(-factor * captury_joint_angle[t_cap:,1], linewidth=1, alpha = 0.5, color="green")
-        axes[1,i].set_title(joint + "_Y (deg)")
-    
-        # Plot Z axis
-        axes[2,i].plot(joint_angle["angle_z"][t_ss:], linewidth=1, color="blue")
-        axes[2,i].plot(captury_joint_angle[t_cap:,2], linewidth=1, alpha = 0.5, color="blue")
-        axes[2,i].set_title(joint + "_Z (deg)")
         
-        if "_r" in joint:
-            axes[3,i].plot(GRF["R_insole_force"]/50, linewidth=1, color="black")
-            axes[3,i].set_title("Right GRF")
-        else:
-            axes[3,i].plot(GRF["L_insole_force"]/50, linewidth=1, color="black")
-            axes[3,i].set_title("Left GRF")
-            
+        x_vicon = np.arange(len(vicon_joint_angles[joint]))
+        axes[i].plot(x_vicon, vicon_joint_angles[joint], linewidth=1, alpha = 0.5, color="red")
+        
+
         # axes[0,i].set_ylim(-lim,lim)
         # axes[1,i].set_ylim(-lim,lim)
         # axes[2,i].set_ylim(-lim,lim)
@@ -254,136 +271,82 @@ def plot_joint_angles(joint_angles, GRF, captury_joint_angles, t_plot):
     
     plt.tight_layout()
     plt.show()
-
-## Function to read all the data from captury
-def read_captury_data(path, original_end, total_data_end):
-    csv_path = path
-
-
-    # If you need to specify an encoding or handle bad lines:
-    df = pd.read_csv(
-        csv_path,
-        sep=";",
-        header=2,
-        encoding="utf-8",       # e.g. latin1, utf-8, etc.
-        engine="python",        # sometimes needed for complex separators
-    )
-
-    # Extract the required quaternions
-    # joint → tuple(start_idx, start_idx+1, start_idx+2, start_idx+3)
-    joint_idxs = {
-        "foot_l":  (58, 59, 60, 61),
-        "shank_l": (65, 66, 67, 68),
-        "thigh_l": (72, 73, 74, 75),
-        "foot_r":  (86, 87, 88, 89),
-        "shank_r": (93, 94, 95, 96),
-        "thigh_r": (100,101,102,103),
-        "pelvis":  (177,178,179,180),
-    }
-    comps = ["X","Y","Z","W"]
-
-
-    # Create an empty DataFrame
-    quat_df = pd.DataFrame()
+ 
+ 
+def read_mot(vicon_path):
+    with open(vicon_path, 'r') as f:
+        lines = f.readlines()
+        
+    # Find the line where actual data starts (usually line starting with 'time')
+    for i, line in enumerate(lines):
+        if line.strip().startswith('time'):
+            data_start = i
+            break
+        
+    # Read the file from the data_start line
+    df = pd.read_csv(vicon_path, sep='\t', skiprows=data_start)
+    return df
+       
+# Read the data from vicon and write it to a dataframe
+def read_vicon_data(vicon_path):
     
-    t_end = original_end
+    # Example usage
+    mot_path = vicon_path
+    df = read_mot(mot_path)
 
-    # Loop over each joint, pull out its 4 columns, and assign them with nice names
-    for joint, (i0,i1,i2,i3) in joint_idxs.items():
-        # grab the raw (n_rows × 4) slice
-        mat = df.iloc[2:t_end, [i0, i1, i2, i3]].to_numpy()  
-        mat = mat.astype(np.float64)
-        # pack each row into one object: either a list or small ndarray
-        quat_df[joint] = [row.copy() for row in mat]
-        
-    print(quat_df.shape)
-
-    # 4) Now loop over columns and convert each series into a SciPy Rotation
-    rotations = {}
-    for col in quat_df.columns:
-        # stack into shape (n_frames,4)
-        all_quats = np.stack(quat_df[col].values, axis=0)  
-        # create one Rotation object per frame
-        # 1) compute norms
-        norms = np.linalg.norm(all_quats, axis=1)
-
-        # 2) find zeros
-        zero_mask = norms == 0
-
-        # 3) replace zero‐rows with identity quaternion
-        all_quats[zero_mask] = np.array([1.0, 0.0, 0.0, 0.0])
-
-        # 4) normalize _all_ quaternions (including the ones you just fixed)
-        all_quats = all_quats / np.linalg.norm(all_quats, axis=1, keepdims=True)
-
-        # 5) now safely convert
-        rotations[col] = R.from_quat(all_quats)
-        
-
-    joint_heirarchy = {
-        "pelvis" : "pelvis",
-        "thigh_r" : "pelvis",
-        "thigh_l" : "pelvis",
-        "shank_r" : "thigh_r",
-        "shank_l" : "thigh_l",
-        "foot_r" : "shank_r",
-        "foot_l" : "shank_l"        
-    }
+    # for col in df.columns:
+    #     print(col)
 
 
-    joint_angles = {}
-    relative_joint_quaternions = {}
-    relative_joint_quaternions_upsampled = {}
-    joint_angles_upsampled = {}
+    Joint_angles_col = ["hip_flexion_r",
+                        "hip_rotation_r",
+                        "hip_adduction_r",
+                        "hip_flexion_l",
+                        "hip_rotation_l",
+                        "hip_adduction_l",
+                        "knee_angle_r",
+                        "knee_angle_l",
+                        "ankle_angle_r",
+                        "subtalar_angle_r",
+                        "mtp_angle_r",
+                        "ankle_angle_l",
+                        "subtalar_angle_l",
+                        "mtp_angle_l"]
+
+    angles_df = df[Joint_angles_col]
     
-    # from captury we directly get rel child limb quaternions
-    for child, parent in joint_heirarchy.items():
-        
-        relative_joint_quaternions[child] = rotations[child]
+        # angles_df is your original DataFrame with rows sampled at 100 Hz
+    original_len = len(angles_df)
+    original_index = np.arange(original_len)
 
-        # original rotations (Rotation object of length N)
-        rots = relative_joint_quaternions[child]
+    # Desired number of samples for 150 Hz
+    new_len = int(np.floor(original_len * 150 / 100))
+    new_index = np.linspace(0, original_len - 1, new_len)
 
-        # original timestamps (e.g. frame numbers or seconds)
-        N_orig = len(rots)
-        # 1) sampling rates
-        fs_orig = 70.0    # original Hz
-        fs_new  = 150.0   # desired Hz
+    # Use the index as a fake 'x' axis for interpolation
+    angles_df.index = original_index
 
-        # 2) total duration in seconds
-        duration = (N_orig - 1) / fs_orig
+    interpolated_data = {}
+    for col in angles_df.columns:
+        interpolated_data[col] = np.interp(new_index, original_index, angles_df[col].values)
 
-        # 3) create time vectors
-        t_orig = np.linspace(0.0, duration, N_orig)                  # shape (N_orig,)
-        N_new  = int(np.round(duration * fs_new)) + 1                # number of new samples
-
-        # new timestamps, 3× as many
-        t_new = np.linspace(0, duration, N_new)
-
-        # build the slerp interpolator
-        slerp = Slerp(t_orig, rots)
-
-        # evaluate at high‐rate times
-        high_rate_rots = slerp(t_new)        # Rotation of length N*3
-        
-        t_cap_write_start = 0
-        t_cap_write_end = total_data_end
-        relative_joint_quaternions_upsampled[f"{child}_captury"] = high_rate_rots[t_cap_write_start:t_cap_write_end].as_quat()
-
-        # now extract your Euler angles
-        joint_angles_upsampled[child] = high_rate_rots.as_euler('zyx', degrees=True)
-        
-        print(len(relative_joint_quaternions_upsampled[f"{child}_captury"] ))
-        # joint_angles_upsampled[child] = high_rate_rots.as_quat()
-        
-        
-    return joint_angles_upsampled, relative_joint_quaternions_upsampled
+    # Convert result back into a DataFrame
+    angles_df_upsampled = pd.DataFrame(interpolated_data)
     
+    print("Vicon data")
+    
+    angles_df_upsampled = angles_df_upsampled.iloc[0:5700,:]
+    
+    print(len(angles_df_upsampled))
 
+    return angles_df_upsampled
+    
+    
+    
 def main():
     
-    captury_path = "/home/cshah/workspaces/sensorsuit/Captury logs/07_09_2025_Nicole/Chinmay Sensor Config/07_09_Nicole_random.csv"
-    csv_path = "/home/cshah/workspaces/sensorsuit/SensorSuit-logs/07_09_2025_Nicole/07_09_2025_Chinmay_Sensor_Config/07_09_C_random.csv"
+    vicon_path = "/home/cshah/workspaces/sensorsuit/Vicon Logs/07_09_2025_Nicole/test_SS01_SQ_10_IK.mot"
+    csv_path = "/home/cshah/workspaces/sensorsuit/SensorSuit-logs/07_09_2025_Nicole/07_09_2025_GA_Tech_sensor_Config/07_09_SQ_10_01.csv"
 
     # Load the data to a csv
     data = Utility.load_quaternion_data(csv_path=csv_path)
@@ -402,44 +365,47 @@ def main():
                                                         joint_imu_map_microstrain=joint_imu_map_microstrain, 
                                                         joint_imu_map_insole=joint_imu_map_insole)
     
-
-    
-    
-    cap_original_end = 8200
-    cap_total_data_end = 17500
-    
-    
-    t_plot = 905
-    t_ss_end = 18405
-    
-    
-    
     # Extract all acc + gyro data - to add in with quat data for training
-    acc_gyro_data = Utility.extract_acc_gyro_data(all_data=data, joint_imu_map=joint_imu_map)
-    acc_gyro_df = acc_gyro_data[t_plot:t_ss_end]
+    # acc_gyro_data = Utility.extract_acc_gyro_data(all_data=data, joint_imu_map=joint_imu_map)
+    # acc_gyro_df = acc_gyro_data[4422:64412]
+    
     
     # Transform the quaternions - Zero them to the pelvis frame and transform to animation frame
-    transformed_quat, raw_quaternions = transform_quaternions(data=quaternion_data, t_pose_q=t_pose_quat, transforms=body_transforms, joint_heirarchy=joint_heirarchy, t_plot=t_plot, t_ss_end=t_ss_end)
+    transformed_quat, raw_quaternions = transform_quaternions(data=quaternion_data, t_pose_q=t_pose_quat, transforms=body_transforms, joint_heirarchy=joint_heirarchy)
     
     # # Get the joint angles
     joint_angles, joint_rel_raw_quaternions  = cal_joint_angles(transformed_quat, joint_heirarchy, body_transforms, raw_quaternions)
     
-    # Extract the Captury Data
-    captury_joint_angles, captury_joint_quaternions = read_captury_data(captury_path, cap_original_end, cap_total_data_end)
+    # Read the vicon data
+    joint_angles_vicon = read_vicon_data(vicon_path)
+    
+    # Restreucture joint angles form ss for plotting
+    joint_angles_restruct = re_structure_ss_df(joint_angles)
+    
+    
     
 
     # # Plot the joint angles
-    plot_joint_angles(joint_angles, insole_force_data, captury_joint_angles, t_plot)
+    # plot_joint_angles(joint_angles_restruct, joint_angles_vicon)
     
-    # Write all the data into one file for ML training
-    # Utility.write_dataframe_2_csv(joint_rel_raw_quaternions, captury_joint_quaternions)
-    # # Write to CSV, formatting floats with up to 6 decimal places
-    # csv_path = "/home/cshah/workspaces/deepPhase based work/Data/Full Training - Gyro + Joint Angles/07_09_RM_gyro.csv"
-    # acc_gyro_df.to_csv(csv_path,
-    #       index=False,
-    #       float_format='%.6f',      # e.g. 0.123457
-    #       quoting=csv.QUOTE_MINIMAL)
-
+    # Separated dataframe to write to a csv file
+    joint_rel_quat_df = pd.DataFrame([joint_rel_raw_quaternions])
+    write_df = pd.DataFrame()
+    
+    for col in joint_rel_quat_df.columns:
+        write_df[f"{col}_qX"] = joint_rel_quat_df[col][0][:,0]
+        write_df[f"{col}_qY"] = joint_rel_quat_df[col][0][:,1]
+        write_df[f"{col}_qZ"] = joint_rel_quat_df[col][0][:,2]
+        write_df[f"{col}_qW"] = joint_rel_quat_df[col][0][:,3]
+        
+    df_quats_angles = pd.concat([write_df, joint_angles_vicon], axis=1) 
+    
+    # Write to CSV, formatting floats with up to 6 decimal places
+    csv_path = "/home/cshah/workspaces/deepPhase based work/Data/07_09_Nicole/GATECH_config/07_09_SQ.csv"
+    df_quats_angles.to_csv(csv_path,
+          index=False,
+          float_format='%.6f',      # e.g. 0.123457
+          quoting=csv.QUOTE_MINIMAL)
 
 
 

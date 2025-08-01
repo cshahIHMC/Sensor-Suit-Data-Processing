@@ -130,7 +130,7 @@ def transform_quaternions_unlocked_pelvis(data, t_pose_q, transforms):
         if "foot" in imu:
             
             frame_name = "pelvis_2_" + imu            
-            q_raw =  t_pose_q_norm["pelvis"] *transforms[frame_name] * q_raw * t_pose_q_norm[imu].inv() * transforms[frame_name].inv()
+            q_raw =  t_pose_q_norm["pelvis"] * transforms[frame_name] * q_raw * t_pose_q_norm[imu].inv() * transforms[frame_name].inv()
        
         # pelvis-local
         if "foot" not in imu:
@@ -169,16 +169,16 @@ def transform_quaternions_locked_pelvis(data, t_pose_q, transforms):
         if "foot_l" in imu:
             transform_r = [ 0.96805752,  0.24972168, -0.01774981,  0.01163004]
             transform_l = [ 0.21206732,  0.97710702, -0.01205927, -0.00935059]
-            quaternions[imu] = R.from_quat(transform_r) * quaternions[imu]
+            quaternions[imu] = R.from_quat(transform_l) * quaternions[imu]
             
         elif "foot_r" in imu:
             transform_r = [ 0.96805752,  0.24972168, -0.01774981,  0.01163004]
             transform_l = [ 0.21206732,  0.97710702, -0.01205927, -0.00935059]
-            quaternions[imu] = R.from_quat(transform_l) * quaternions[imu]
+            quaternions[imu] = R.from_quat(transform_r) * quaternions[imu]
         else:
             pass
             
-        relative_rotations = transforms["Anatomical_2_pelvis"] * quaternions["pelvis"].inv() * quaternions[imu] * transforms["Anatomical_2_pelvis"].inv()
+        relative_rotations = transforms["Anatomical_2_pelvis"].inv() * quaternions["pelvis"].inv() * quaternions[imu] * transforms["Anatomical_2_pelvis"]
 
         if imu == "thigh_l" :
 
@@ -377,12 +377,12 @@ limb_keys = {
         
     # 05_20_2025 - new thigh imu location + joint level collection + walk
     
-    "pelvis": "imu2_quat",
-    "thigh_r": "imu5_quat", 
-    "shank_r": "imu6_quat",
-    "thigh_l": "imu1_quat",
-    "shank_l": "imu4_quat",
-    "back": "imu3_quat",
+        "pelvis": "imu2_quat",
+        "thigh_r": "imu6_quat", 
+        "shank_r": "imu4_quat",
+        "thigh_l": "imu1_quat",
+        "shank_l": "imu5_quat",
+        "back": "imu3_quat",
     
 }
 
@@ -393,15 +393,15 @@ limb_structure = {
     "thigh_r": ("pelvis_r", "thigh_r"),
     "shank_l": ("thigh_l", "shank_l"),
     "shank_r": ("thigh_r", "shank_r"),
-    "foot_l": ("shank_l", "foot_l"),
-    "foot_r": ("shank_r", "foot_r"),
+    # "foot_l": ("shank_l", "foot_l"),
+    # "foot_r": ("shank_r", "foot_r"),
     "back": ("pelvis", "back")
 }
 segment_lengths = {"back": 0.3, "pelvis_l": 0.2, "pelvis_r":0.2, "thigh_l":0.4, "thigh_r": 0.4, "shank_l" : 0.4, "shank_r":0.4, "foot_l": 0.075, "foot_r":0.075} ## "pelvis_r": 0.2, "thigh_l": 0.4, "thigh_r": 0.4} ## "shank_l": 0.4, "shank_r": 0.4} ## "foot_l": 0.2, "foot_r": 0.2}
 
 
 
-csv_path = "/home/cshah/workspaces/sensorsuit/logs/05_08_2025/05_08_2025_start_0_walk_test.csv"
+csv_path = "/home/cshah/workspaces/sensorsuit/SensorSuit-logs/07_09_2025_Nicole/07_09_2025_GA_Tech_sensor_Config/07_09_SQ_10_01.csv"
 
 # Extracting the data from csv
 # tpose_data = load_quaternion_data(t_pose_csv_path)
@@ -418,8 +418,8 @@ quaternion_data = {limb: np.stack(data[f"{imu}"].apply(eval).values) for limb, i
 extract_insole_imu_data(quaternion_data, data, t_pose_q)
 
 # Performing all the appropriate transformations to bring everything to the appropriate frames
-# transformed_data = transform_quaternions_locked_pelvis(quaternion_data, t_pose_q, body_transforms)
-transformed_data = transform_quaternions_unlocked_pelvis(quaternion_data, t_pose_q, body_transforms)
+transformed_data = transform_quaternions_locked_pelvis(quaternion_data, t_pose_q, body_transforms)
+# transformed_data = transform_quaternions_unlocked_pelvis(quaternion_data, t_pose_q, body_transforms)
 
 
 # Getting all the joint positions from the transformed data
