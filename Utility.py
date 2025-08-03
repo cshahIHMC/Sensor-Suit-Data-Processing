@@ -341,3 +341,18 @@ def extract_acc_gyro_data(all_data, joint_imu_map):
     subset_df = all_data[columns_to_extract].copy()    
         
     return subset_df
+
+
+def read_mot(vicon_path):
+    with open(vicon_path, 'r') as f:
+        lines = f.readlines()
+        
+    # Find the line where actual data starts (usually line starting with 'time')
+    for i, line in enumerate(lines):
+        if line.strip().startswith('time'):
+            data_start = i
+            break
+        
+    # Read the file from the data_start line
+    df = pd.read_csv(vicon_path, sep='\t', skiprows=data_start)
+    return df
