@@ -56,7 +56,27 @@ def extract_vicon_data(vicon_df):
     
     print("Vicon Data Shape")
     print(angles_df_upsampled.shape)
+    
+    # # Mirror the vicon data 
+    # angles_df_upsampled_mirror = pd.DataFrame()
+    # angles_df_upsampled_mirror["hip_flexion_r"] = angles_df_upsampled["hip_flexion_l"]
+    # angles_df_upsampled_mirror["hip_rotation_r"] = angles_df_upsampled["hip_rotation_l"]
+    # angles_df_upsampled_mirror["hip_adduction_r"] = angles_df_upsampled["hip_adduction_l"]
+    # angles_df_upsampled_mirror["hip_flexion_l"] = angles_df_upsampled["hip_flexion_r"]
+    # angles_df_upsampled_mirror["hip_rotation_l"] = angles_df_upsampled["hip_rotation_r"]
+    # angles_df_upsampled_mirror["hip_adduction_l"] = angles_df_upsampled["hip_adduction_r"]
+    # angles_df_upsampled_mirror["knee_angle_r"] = angles_df_upsampled["knee_angle_l"]
+    # angles_df_upsampled_mirror["knee_angle_l"] = angles_df_upsampled["knee_angle_r"]
+    # angles_df_upsampled_mirror["ankle_angle_r"] = angles_df_upsampled["ankle_angle_l"]
+    # angles_df_upsampled_mirror["ankle_angle_l"] = angles_df_upsampled["ankle_angle_r"]
+    
+    # print("Vicon Data Mirrored")
+    # print(angles_df_upsampled_mirror.shape)
+    
+    # angles_df_combined = pd.concat([angles_df_upsampled, angles_df_upsampled_mirror], axis=0)
 
+    # print("Vicon Data All")
+    # print(angles_df_combined.shape)
 
     return angles_df_upsampled, data_start_point, data_length
 
@@ -68,13 +88,14 @@ def extract_acc_gyro_insole(sensor_suit_df, sync_start_point, sync_stop_point, j
     
     # Gyro
     for keys, cols in joint_imu_map.items():
+        
         acc_gyro_insole_df[keys+"_gyro_x"] = sensor_suit_df[cols+"_gyro_x"].iloc[sync_start_point:sync_stop_point]
         acc_gyro_insole_df[keys+"_gyro_y"] = sensor_suit_df[cols+"_gyro_y"].iloc[sync_start_point:sync_stop_point]
         acc_gyro_insole_df[keys+"_gyro_z"] = sensor_suit_df[cols+"_gyro_z"].iloc[sync_start_point:sync_stop_point]   
         
         # The xsensor data is recorded in deg/sec while microstrain data is recorded in rad/sec.
         # To make everything consistent we convert the xsensor data to rad/sec
-        if "insole" in keys:
+        if "insole" in cols:
             acc_gyro_insole_df[keys+"_gyro_x"] = acc_gyro_insole_df[keys+"_gyro_x"] * np.pi / 180
             acc_gyro_insole_df[keys+"_gyro_y"] = acc_gyro_insole_df[keys+"_gyro_y"] * np.pi / 180
             acc_gyro_insole_df[keys+"_gyro_z"] = acc_gyro_insole_df[keys+"_gyro_z"] * np.pi / 180
@@ -319,9 +340,11 @@ def main():
     
     gyro_acc_insole_df, subject_paramters_df, quat_df = extract_ss_data(sensor_suit_df, data_start_point, data_length, joint_map, joint_imu_map, joint_insole_map, subject_parameters, joint_heirarchy)
     
+    quat_2_angles_df = pd.concat([quat_df, vicon_df], axis=1)
+    
     # Write to CSV, formatting floats with up to 6 decimal places
-    csv_path = "/home/cshah/workspaces/deepPhase based work/Data/Vicon_SS_Data_trial/PAE_sub01_walk_around.csv"
-    gyro_acc_insole_df.to_csv(csv_path,
+    csv_path = "/home/cshah/workspaces/deepPhase based work/Data/Vicon_SS_Data_trial/EST_sub01_walk_around.csv"
+    quat_2_angles_df.to_csv(csv_path,
           index=False,
           float_format='%.6f',      # e.g. 0.123457
           quoting=csv.QUOTE_MINIMAL)    
