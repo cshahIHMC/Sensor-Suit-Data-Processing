@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 
-ss_file_name = "/home/cshah/workspaces/sensorsuit/quat_debug/08_07_2025/08_07_shank_treadmill_on_on.csv"
-vicon_file_name = "/home/cshah/workspaces/sensorsuit/quat_debug/VIcon_08_08/ext_shank_treadmill_on_on.csv"
+ss_file_name = "/home/cshah/workspaces/sensorsuit/quat_debug/08_11_2025/08_11_inclined_y.csv"
+vicon_file_name = "/home/cshah/workspaces/sensorsuit/quat_debug/Vicon_08_11/ext_inclined_y.csv"
 
 
 vicon_df = pd.read_csv(vicon_file_name)
@@ -34,7 +34,7 @@ def build_frame(C, X, Y):
     # Rotation matrix: columns are basis vectors
     return np.stack([x_axis, y_axis, z_axis], axis=1)
 
-R0 = build_frame(C1[0], X1[0], Y1[0])  # initial local frame (3x3)
+R0 = build_frame(C1[2], X1[2], Y1[2])  # initial local frame (3x3)
 
 # Step 4: For each frame, compute relative rotation to R0
 euler_angles = []  # each row: [roll (X), pitch (Y), yaw (Z)]
@@ -57,8 +57,12 @@ imu_name = "imu5_quat"
 imu_Filtname = "imu5_ESTquat"
 sync_start_index = ss_df[(ss_df['SYNC'].shift(1) == 0) & (ss_df['SYNC'] == 1)].index
 
-data_start = sync_start_index[0]
-data_end = sync_start_index[1]
+print(sync_start_index)
+# data_start = sync_start_index[0]
+# data_end = sync_start_index[1]
+
+data_start = 426
+data_end = 16732
 
 imu_quat = np.stack(ss_df[imu_name].iloc[data_start:data_end].apply(eval).values)
 imu_Filtquat = np.stack(ss_df[imu_Filtname].iloc[data_start:data_end].apply(eval).values)

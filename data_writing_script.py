@@ -13,6 +13,40 @@ def read_data(vicon_data_path, sensor_suit_data_path):
     
     return vicon_df, ss_df
 
+def plot_quat_vs_vicon(joint_angles, vicon_df):
+    # Map from IMU segment to (Euler axis order, Vicon columns)
+    joint_map = {
+        "thigh_r": ["hip_flexion_r", "hip_adduction_r", "hip_rotation_r"],
+        "thigh_l": ["hip_flexion_l", "hip_adduction_l", "hip_rotation_l"],
+        "shank_r": ["knee_angle_r"],
+        "shank_l": ["knee_angle_l"],
+        "foot_r": ["ankle_angle_r"],
+        "foot_l": ["ankle_angle_l"]
+        }
+
+    fig, axes = plt.subplots(3, len(joint_map.keys()), figsize=(10, 3 * len(joint_map.keys())))
+    
+    colors = ["red", "green", "blue"]
+    if len(joint_map) == 1:
+        axes = [axes]  # make iterable if only 1
+
+    for i, (joint, vicon) in enumerate(joint_map.items()):
+        
+        vicon_cols = vicon
+        joint_angle = joint_angles[joint]
+        
+        for j in range(3):
+            axes[j,i].plot(joint_angle[:,j], linewidth=1 , color=colors[j])
+            
+            if j < len(vicon_cols):
+                axes[j,i].plot(vicon_df[vicon_cols[j]], linewidth=1, alpha = 0.5 , color=colors[j])
+                axes[j,i].set_title(vicon_cols[j])
+            
+
+        
+    plt.tight_layout()
+    plt.show()
+    
 def extract_vicon_data(vicon_df):
     
     Joint_angles_col = ["hip_flexion_r",
@@ -269,7 +303,7 @@ def extract_ss_data(sensor_suit_df, data_start_point, data_length, joint_map, jo
     print(quat_df.shape)
     
     
-    return gyro_acc_insole_df, subject_parameters_df, quat_df
+    return gyro_acc_insole_df, subject_parameters_df, quat_df, joint_angles
     
     
     
@@ -338,16 +372,19 @@ def main():
         "Foot_l_length": ""    
     }
     
-    gyro_acc_insole_df, subject_paramters_df, quat_df = extract_ss_data(sensor_suit_df, data_start_point, data_length, joint_map, joint_imu_map, joint_insole_map, subject_parameters, joint_heirarchy)
+    gyro_acc_insole_df, subject_paramters_df, quat_df, joint_angles = extract_ss_data(sensor_suit_df, data_start_point, data_length, joint_map, joint_imu_map, joint_insole_map, subject_parameters, joint_heirarchy)
     
     quat_2_angles_df = pd.concat([quat_df, vicon_df], axis=1)
     
+    plot_quat_vs_vicon(joint_angles, vicon_df)
+
+    
     # Write to CSV, formatting floats with up to 6 decimal places
-    csv_path = "/home/cshah/workspaces/deepPhase based work/Data/Vicon_SS_Data_trial/EST_sub01_walk_around.csv"
-    quat_2_angles_df.to_csv(csv_path,
-          index=False,
-          float_format='%.6f',      # e.g. 0.123457
-          quoting=csv.QUOTE_MINIMAL)    
+    # csv_path = "/home/cshah/workspaces/deepPhase based work/Data/Vicon_SS_Data_trial/EST_sub01_walk_around.csv"
+    # quat_2_angles_df.to_csv(csv_path,
+    #       index=False,
+    #       float_format='%.6f',      # e.g. 0.123457
+    #       quoting=csv.QUOTE_MINIMAL)    
     
     
 if __name__ == "__main__":
